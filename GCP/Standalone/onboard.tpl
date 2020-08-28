@@ -197,15 +197,6 @@ tmsh+=(
 "tmsh create sys management-route mgmt_gw network $${MGMTGATEWAY}/32 type interface mtu 1460"
 "tmsh create sys management-route mgmt_net network $${MGMTNETWORK}/$${MGMTMASK} gateway $${MGMTGATEWAY} mtu 1460"
 "tmsh create sys management-route default gateway $${MGMTGATEWAY} mtu 1460"
-"tmsh create net vlan external interfaces add { 1.0 } mtu 1460"
-"tmsh create net self self_external address $${INT1ADDRESS}/32 vlan external"
-"tmsh create net route ext_gw_interface network $${INT1GATEWAY}/32 interface external"
-"tmsh create net route ext_rt network $${INT1NETWORK}/$${INT1MASK} gw $${INT1GATEWAY}"
-"tmsh create net route default gw $${INT1GATEWAY}"
-"tmsh create net vlan internal interfaces add { 1.2 } mtu 1460"
-"tmsh create net self self_internal address $${INT2ADDRESS}/32 vlan internal allow-service add { tcp:4353 udp:1026 }"
-"tmsh create net route int_gw_interface network $${INT2GATEWAY}/32 interface internal"
-"tmsh create net route int_rt network $${INT2NETWORK}/$${INT2MASK} gw $${INT2GATEWAY}"
 "tmsh modify sys global-settings remote-host add { metadata.google.internal { hostname metadata.google.internal addr 169.254.169.254 } }"
 "tmsh modify sys management-dhcp sys-mgmt-dhcp-config request-options delete { ntp-servers }"
 'tmsh save /sys config'
@@ -294,7 +285,7 @@ fi
 
 # Cleanup
 echo "Removing DO/AS3/TS declaration files"
-rm -rf /config/cloud/do.json /config/cloud/as3.json /config/cloud/ts.json
+#rm -rf /config/cloud/do.json /config/cloud/as3.json /config/cloud/ts.json
 
 date
 echo "Finished custom config"
