@@ -229,30 +229,30 @@ sed -i "s/\$${bigIqPassword}/$passwd/g" $file_loc
 sed -i "s/\$${local_selfip_ext}/$INT1ADDRESS/g" $file_loc
 sed -i "s/\$${local_selfip_int}/$INT2ADDRESS/g" $file_loc
 sed -i "s/\$${local_host}/$HOSTNAME/g" $file_loc
-# response_code=$(/usr/bin/curl -sku admin:$passwd -w "%%{http_code}" -X POST -H "Content-Type: application/json" -H "Expect:" https://localhost:$${mgmtGuiPort}/mgmt/shared/declarative-onboarding -d @$file_loc -o /dev/null)
-# if [[ $response_code == *200 || $response_code == *202 ]]; then
-#   echo "DO task created"
-# else
-#   error_exit "$LINENO: DO creation failed. Exit."
-# fi
+response_code=$(/usr/bin/curl -sku admin:$passwd -w "%%{http_code}" -X POST -H "Content-Type: application/json" -H "Expect:" https://localhost:$${mgmtGuiPort}/mgmt/shared/declarative-onboarding -d @$file_loc -o /dev/null)
+if [[ $response_code == *200 || $response_code == *202 ]]; then
+  echo "DO task created"
+else
+  error_exit "$LINENO: DO creation failed. Exit."
+fi
 
-# # Check DO Task
-# checks=0
-# response_code=""
-# while [ $checks -lt 30 ] ; do
-#   response_code=$(curl -sku admin:$passwd -X GET  https://localhost:$${mgmtGuiPort}/mgmt/shared/declarative-onboarding/task | jq -r ".[].result.code")
-#   if [[ $response_code == *200 ]]; then
-#     echo "DO task successful"
-#     break
-#   else
-#     echo "DO task working..."
-#     let checks=checks+1
-#     sleep 10
-#   fi
-# done
-# if [[ $response_code != *200 ]]; then
-#   error_exit "$LINENO: DO task failed. Exit."
-# fi
+# Check DO Task
+checks=0
+response_code=""
+while [ $checks -lt 30 ] ; do
+  response_code=$(curl -sku admin:$passwd -X GET  https://localhost:$${mgmtGuiPort}/mgmt/shared/declarative-onboarding/task | jq -r ".[].result.code")
+  if [[ $response_code == *200 ]]; then
+    echo "DO task successful"
+    break
+  else
+    echo "DO task working..."
+    let checks=checks+1
+    sleep 10
+  fi
+done
+if [[ $response_code != *200 ]]; then
+  error_exit "$LINENO: DO task failed. Exit."
+fi
 
 date
 
