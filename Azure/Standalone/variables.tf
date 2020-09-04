@@ -1,12 +1,5 @@
 # Variables
 
-# REST API Setting
-variable rest_do_uri { default = "/mgmt/shared/declarative-onboarding" }
-variable rest_as3_uri { default = "/mgmt/shared/appsvcs/declare" }
-variable rest_do_method { default = "POST" }
-variable rest_as3_method { default = "POST" }
-variable rest_ts_uri { default = "/mgmt/shared/telemetry/declare" }
-
 # Azure Environment
 variable sp_subscription_id {}
 variable sp_client_id {}

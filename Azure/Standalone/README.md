@@ -104,10 +104,6 @@ This template uses PayGo BIG-IP image for the deployment (as default). If you wo
 | Parameter | Required | Description |
 | --- | --- | --- |
 | prefix | Yes | This value is inserted at the beginning of each Azure object (alpha-numeric, no special character) |
-| rest_do_uri | Yes | URI of the Declarative Onboarding REST call |
-| rest_as3_uri | Yes | URI of the AS3 REST call |
-| rest_do_method | Yes | Available options are GET, POST, and DELETE |
-| rest_AS3_method | Yes | Available options are GET, POST, and DELETE |
 | sp_subscription_id | Yes | This is the service principal subscription ID |
 | sp_client_id | Yes | This is the service principal application/client ID |
 | sp_client_secret | Yes | This is the service principal secret |
