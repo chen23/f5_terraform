@@ -30,7 +30,7 @@ resource "azurerm_resource_group" "rg" {
 
 # Create Log Analytic Workspace
 resource "azurerm_log_analytics_workspace" "law" {
-  name                = "${var.prefix}-law"
+  name                = format("%s-law-%s", var.prefix, random_id.id.hex)
   sku                 = "PerNode"
   retention_in_days   = 300
   resource_group_name = azurerm_resource_group.rg.name
@@ -39,7 +39,7 @@ resource "azurerm_log_analytics_workspace" "law" {
 
 # Create the Storage Account
 resource "azurerm_storage_account" "mystorage" {
-  name                     = "${var.prefix}mystorage"
+  name                     = format("%sstorage%s", var.prefix, random_id.id.hex)
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
