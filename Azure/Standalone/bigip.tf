@@ -147,37 +147,36 @@ resource "local_file" "ts_json" {
   filename = "${path.module}/ts.json"
 }
 
-# resource "null_resource" "f5vm01_DO" {
-#   depends_on = [module.bigip]
-#   # Running DO REST API
-#   provisioner "local-exec" {
-#     command = <<-EOF
-#       #!/bin/bash
-#       curl -k -X ${var.rest_do_method} https://${azurerm_public_ip.vm01mgmtpip.ip_address}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.rest_vm01_do_file}
-#       x=1; while [ $x -le 30 ]; do STATUS=$(curl -s -k -X GET https://${azurerm_public_ip.vm01mgmtpip.ip_address}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-#       sleep 10
-#     EOF
-#   }
-# }
+resource "null_resource" "f5vm01_DO" {
+  # Running DO REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -X POST https://${module.bigip.mgmtPublicIP}/mgmt/shared/declarative-onboarding -u ${module.bigip.f5_username}:${module.bigip.bigip_password} -d @DO_3nic.json
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -s -k -X GET https://${module.bigip.mgmtPublicIP}/mgmt/shared/declarative-onboarding/task -u ${module.bigip.f5_username}:${module.bigip.bigip_password}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 10
+    EOF
+  }
+}
 
-# resource "null_resource" "f5vm01_TS" {
-#   depends_on = [null_resource.f5vm01_DO]
-#   # Running TS REST API
-#   provisioner "local-exec" {
-#     command = <<-EOF
-#       #!/bin/bash
-#       curl -H 'Content-Type: application/json' -k -X POST https://${azurerm_public_ip.vm01mgmtpip.ip_address}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.rest_vm_ts_file}
-#     EOF
-#   }
-# }
+resource "null_resource" "f5vm01_TS" {
+  depends_on = [null_resource.f5vm01_DO]
+  # Running TS REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -H 'Content-Type: application/json' -k -X POST https://${module.bigip.mgmtPublicIP}/mgmt/shared/telemetry/declare -u ${module.bigip.f5_username}:${module.bigip.bigip_password} -d @ts.json
+    EOF
+  }
+}
 
-# resource "null_resource" "f5vm_AS3" {
-#   depends_on = [null_resource.f5vm01_TS]
-#   # Running AS3 REST API
-#   provisioner "local-exec" {
-#     command = <<-EOF
-#       #!/bin/bash
-#       curl -k -X ${var.rest_as3_method} https://${azurerm_public_ip.vm01mgmtpip.ip_address}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${var.rest_vm_as3_file}
-#     EOF
-#   }
-# }
+resource "null_resource" "f5vm_AS3" {
+  depends_on = [null_resource.f5vm01_TS]
+  # Running AS3 REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -X POST https://${module.bigip.mgmtPublicIP}/mgmt/shared/appsvcs/declare -u ${module.bigip.f5_username}:${module.bigip.bigip_password} -d @as3.json
+    EOF
+  }
+}
