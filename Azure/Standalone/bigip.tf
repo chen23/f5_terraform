@@ -17,6 +17,9 @@ module "bigip" {
   f5_image_name             = var.f5_image_name
   f5_version                = var.f5_version
   f5_product_name           = var.f5_product_name
+  doPackageUrl              = var.doPackageUrl
+  as3PackageUrl             = var.as3PackageUrl
+  tsPackageUrl              = var.tsPackageUrl
 }
 
 # Create the Network Security group Module to associate with BIGIP-Mgmt-Nic
