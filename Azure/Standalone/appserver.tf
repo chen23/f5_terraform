@@ -1,24 +1,29 @@
 # Backend VM - web server running DVWA
 
+# Create random password for app server
+resource random_string password {
+  length           = 16
+  min_upper        = 1
+  min_lower        = 1
+  min_numeric      = 1
+  special          = false
+  override_special = " #%*+,-./:=?@[]^_~"
+}
+
 # Create NIC
 resource "azurerm_network_interface" "backend01-ext-nic" {
   name                = "${var.prefix}-backend01-ext-nic"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "primary"
-    subnet_id                     = azurerm_subnet.External.id
-    private_ip_address_allocation = "Static"
-    private_ip_address            = var.backend01ext
-    primary                       = true
+    subnet_id                     = data.azurerm_subnet.external-public.id
+    private_ip_address_allocation = "Dynamic"
   }
 
   tags = {
-    Name        = "${var.environment}-backend01-ext-int"
     environment = var.environment
-    owner       = var.owner
-    group       = var.group
     costcenter  = var.costcenter
     application = "app1"
   }
@@ -27,7 +32,7 @@ resource "azurerm_network_interface" "backend01-ext-nic" {
 # Associate network security groups with NICs
 resource "azurerm_network_interface_security_group_association" "backend01-ext-nsg" {
   network_interface_id      = azurerm_network_interface.backend01-ext-nic.id
-  network_security_group_id = azurerm_network_security_group.main.id
+  network_security_group_id = module.external-network-security-group-public.network_security_group_id
 }
 
 # Setup Onboarding scripts
@@ -43,12 +48,12 @@ EOF
 # Create backend VM
 resource "azurerm_linux_virtual_machine" "backendvm" {
   name                            = "backendvm"
-  location                        = azurerm_resource_group.main.location
-  resource_group_name             = azurerm_resource_group.main.name
+  location                        = azurerm_resource_group.rg.location
+  resource_group_name             = azurerm_resource_group.rg.name
   network_interface_ids           = [azurerm_network_interface.backend01-ext-nic.id]
   size                            = "Standard_B1ms"
-  admin_username                  = var.uname
-  admin_password                  = var.upassword
+  admin_username                  = var.f5_username
+  admin_password                  = random_string.password.result
   disable_password_authentication = false
   computer_name                   = "backend01"
   custom_data                     = base64encode(local.backendvm_custom_data)
@@ -67,10 +72,7 @@ resource "azurerm_linux_virtual_machine" "backendvm" {
   }
 
   tags = {
-    Name        = "${var.environment}-backend01"
     environment = var.environment
-    owner       = var.owner
-    group       = var.group
     costcenter  = var.costcenter
   }
 }

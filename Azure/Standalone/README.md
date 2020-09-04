@@ -32,11 +32,12 @@ Example...
 
 ## Version
 This template is tested and worked in the following version
-Terraform v0.12.26
-+ provider.azurerm v2.1
-+ provider.local v1.4
-+ provider.null v2.1
-+ provider.template v2.1
+Terraform v0.12.29
++ provider.azurerm v2.25.0
++ provider.local v1.4.0
++ provider.null v2.1.2
++ provider.random v2.3.0
++ provider.template v2.1.2
 
 ## Prerequisites
 
@@ -81,8 +82,8 @@ This template uses PayGo BIG-IP image for the deployment (as default). If you wo
 2. In the "variables.tf", modify *image_name* and *product* with the SKU and offer from AZ CLI results
   ```
           # BIGIP Image
-          variable product { default = "f5-big-ip-byol" }
-          variable image_name { default = "f5-big-ltm-2slot-byol" }
+          variable f5_product_name { default = "f5-big-ip-byol" }
+          variable f5_image_name { default = "f5-big-ltm-2slot-byol" }
   ```
 3. In the "variables.tf", modify *license1* with a valid regkey
   ```
@@ -107,34 +108,25 @@ This template uses PayGo BIG-IP image for the deployment (as default). If you wo
 | rest_as3_uri | Yes | URI of the AS3 REST call |
 | rest_do_method | Yes | Available options are GET, POST, and DELETE |
 | rest_AS3_method | Yes | Available options are GET, POST, and DELETE |
-| rest_vm01_do_file | Yes | Terraform will generate the vm01 DO json file, where you can manually run it again for debugging |
-| rest_vm_as3_file | Yes | Terraform will generate the AS3 json file, where you can manually run it again for debugging |
 | sp_subscription_id | Yes | This is the service principal subscription ID |
 | sp_client_id | Yes | This is the service principal application/client ID |
 | sp_client_secret | Yes | This is the service principal secret |
 | sp_tenant_id | Yes | This is the service principal tenant ID |
-| uname | Yes | User name for the Virtual Machine |
-| upassword | Yes | Password for the Virtual Machine |
+| f5_username | Yes | User name for the Virtual Machine |
+| azure_keyvault_secret_name | No | The name of the Azure Key Vault secret containing the password |
 | location | Yes | Location of the deployment |
+| availabilityZones | Yes | If you want the VM placed in an Azure Availability Zone, and the Azure region you are deploying to supports it, specify the numbers of the existing Availability Zone you want to use |
 | cidr | Yes | IP Address range of the Virtual Network |
-| subnet1 | Yes | Subnet IP range of the management network |
-| subnet2 | Yes | Subnet IP range of the external network |
-| f5vm01mgmt | Yes | IP address for 1st BIG-IP's management interface |
-| f5vm01ext | Yes | IP address for 1st BIG-IP's external interface |
 | f5privatevip | Yes | Secondary Private IP address for BIG-IP virtual server (internal) |
 | f5publicvip | Yes | Secondary Private IP address for BIG-IP virtual server (external) |
-| instance_type | Yes | Azure instance to be used for the BIG-IP VE |
-| product | Yes | Azure BIG-IP VE Offer |
-| bigip_version | Yes | BIG-IP Version |
-| image_name | Yes | F5 SKU (image) to deploy. Note: The disk size of the VM will be determined based on the option you select.  **Important**: If intending to provision multiple modules, ensure the appropriate value is selected, such as ****AllTwoBootLocations or AllOneBootLocation****. |
+| f5_instance_type | Yes | Azure instance to be used for the BIG-IP VE |
+| f5_product_name | Yes | Azure BIG-IP VE Offer |
+| f5_version | Yes | BIG-IP Version |
+| f5_image_name | Yes | F5 SKU (image) to deploy. Note: The disk size of the VM will be determined based on the option you select.  **Important**: If intending to provision multiple modules, ensure the appropriate value is selected, such as ****AllTwoBootLocations or AllOneBootLocation****. |
 | license1 | No | The license token for the F5 BIG-IP VE (BYOL) |
-| host1_name | Yes | Hostname for the 1st BIG-IP |
-| ntp_server | Yes | Leave the default NTP server the BIG-IP uses, or replace the default NTP server with the one you want to use |
-| timezone | Yes | If you would like to change the time zone the BIG-IP uses, enter the time zone you want to use. This is based on the tz database found in /usr/share/zoneinfo (see the full list [here](https://github.com/F5Networks/f5-azure-arm-templates/blob/master/azure-timezone-list.md)). Example values: UTC, US/Pacific, US/Eastern, Europe/London or Asia/Singapore. |
-| dns_server | Yes | Leave the default DNS server the BIG-IP uses, or replace the default DNS server with the one you want to use | 
-| DO_URL | Yes | This is the raw github URL for downloading the Declarative Onboarding RPM |
-| AS3_URL | Yes | This is the raw github URL for downloading the AS3 RPM |
-| TS_URL | Yes | This is the raw github URL for downloading the Telemetry RPM |
+| doPackageUrl | Yes | This is the raw github URL for downloading the Declarative Onboarding RPM |
+| as3PackageUrl | Yes | This is the raw github URL for downloading the AS3 RPM |
+| tsPackageUrl | Yes | This is the raw github URL for downloading the Telemetry RPM |
 | libs_dir | Yes | This is where all the temporary libs and RPM will be store in BIG-IP |
 | onboard_log | Yes | This is where the onboarding script logs all the events |
 
@@ -145,8 +137,9 @@ To run this Terraform template, perform the following steps:
   2. Modify terraform.tfvars with the required information
   ```
       # BIG-IP Environment
-      uname     = "azureuser"
-      upassword = "Default12345!"
+      f5_username                = "azureuser"
+      AllowedIPs                 = ["0.0.0.0/0"]
+      azure_keyvault_secret_name = "bigip_admin_password"
 
       # Azure Environment
       sp_subscription_id = "xxxxx"
@@ -203,7 +196,7 @@ In order to pass traffic from your clients to the servers through the BIG-IP sys
 
 ## Redeploy BIG-IP for Replacement or Upgrade
 This example illustrates how to replace or upgrade the BIG-IP VE.
-  1. Change the *bigip_version* variable to the desired release 
+  1. Change the *f5_version* variable to the desired release 
   2. Revoke the problematic BIG-IP VE's license (if BYOL)
   3. Run command
 ```

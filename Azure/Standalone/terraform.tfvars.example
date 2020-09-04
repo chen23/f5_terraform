@@ -1,6 +1,7 @@
 # BIG-IP Environment
-uname     = "azureuser"
-upassword = "Default12345!"
+f5_username                = "azureuser"
+AllowedIPs                 = ["0.0.0.0/0"]
+azure_keyvault_secret_name = "bigip_admin_password"
 
 # Azure Environment
 sp_subscription_id = "xxxxx"

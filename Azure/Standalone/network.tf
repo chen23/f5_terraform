@@ -1,25 +1,36 @@
 # Networking
 
-# Create a Virtual Network
-resource "azurerm_virtual_network" "main" {
-  name                = "${var.prefix}-network"
+module "network" {
+  source              = "Azure/vnet/azurerm"
+  vnet_name           = format("%s-vnet-%s", var.prefix, random_id.id.hex)
+  resource_group_name = azurerm_resource_group.rg.name
   address_space       = [var.cidr]
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  subnet_prefixes     = [cidrsubnet(var.cidr, 8, 1), cidrsubnet(var.cidr, 8, 2), cidrsubnet(var.cidr, 8, 3)]
+  subnet_names        = ["mgmt-subnet", "external-public-subnet", "internal-subnet"]
+
+  tags = {
+    environment = "dev"
+    costcenter  = "it"
+  }
 }
 
-# Create Management Subnet
-resource "azurerm_subnet" "Mgmt" {
-  name                 = "Mgmt"
-  virtual_network_name = azurerm_virtual_network.main.name
-  resource_group_name  = azurerm_resource_group.main.name
-  address_prefix       = var.subnets["subnet1"]
+data "azurerm_subnet" "mgmt" {
+  name                 = "mgmt-subnet"
+  virtual_network_name = module.network.vnet_name
+  resource_group_name  = azurerm_resource_group.rg.name
+  depends_on           = [module.network]
 }
 
-# Create External Subnet
-resource "azurerm_subnet" "External" {
-  name                 = "External"
-  virtual_network_name = azurerm_virtual_network.main.name
-  resource_group_name  = azurerm_resource_group.main.name
-  address_prefix       = var.subnets["subnet2"]
+data "azurerm_subnet" "external-public" {
+  name                 = "external-public-subnet"
+  virtual_network_name = module.network.vnet_name
+  resource_group_name  = azurerm_resource_group.rg.name
+  depends_on           = [module.network]
+}
+
+data "azurerm_subnet" "internal" {
+  name                 = "internal-subnet"
+  virtual_network_name = module.network.vnet_name
+  resource_group_name  = azurerm_resource_group.rg.name
+  depends_on           = [module.network]
 }

@@ -21,3 +21,7 @@
 
 # Output json files for F5 Automation toolchain
 vm*_data.json
+as3.json
+do.json
+DO*.json
+ts.json
