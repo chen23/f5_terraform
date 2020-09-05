@@ -11,7 +11,6 @@ variable location {}
 # NETWORK
 variable AllowedIPs {}
 variable cidr { default = "10.90.0.0/16" }
-variable f5privatevip { default = "10.90.2.111" }
 variable f5publicvip { default = "10.90.2.112" }
 variable mgmt_gw { default = "10.90.1.1" }
 variable ext_gw { default = "10.90.2.1" }
