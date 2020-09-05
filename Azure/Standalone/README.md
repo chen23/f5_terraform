@@ -1,4 +1,4 @@
-# Deploying BIG-IP VE in Azure - Standalone Two NICs
+# Deploying BIG-IP VE in Azure - Standalone Three NICs
 
 ## Contents
 
@@ -11,7 +11,7 @@
 
 ## Introduction
 
-This solution uses a Terraform template to launch a two NIC deployment of a cloud-focused BIG-IP VE standalone device in Microsoft Azure. Traffic flows to the BIG-IP VE which then processes the traffic to application servers. This is the standard cloud design where the BIG-IP VE instance is running with a dual interface. Management traffic is processed on NIC 1, and data plane traffic is processed NIC 2.
+This solution uses a Terraform template to launch a three NIC deployment of a cloud-focused BIG-IP VE standalone device in Microsoft Azure. Traffic flows to the BIG-IP VE which then processes the traffic to application servers. This is the standard cloud design where the BIG-IP VE instance is running with three interfaces. Management traffic is processed on NIC 0, and data plane traffic is processed NIC 1 and 2 (external and internal).
 
 The BIG-IP VEs have the [Local Traffic Manager (LTM)](https://f5.com/products/big-ip/local-traffic-manager-ltm) module enabled to provide advanced traffic management functionality. In addition, the [Application Security Module (ASM)](https://www.f5.com/pdf/products/big-ip-application-security-manager-overview.pdf) can be enabled to provide F5's L4/L7 security features for web application firewall (WAF) and bot protection.
 
@@ -43,27 +43,30 @@ Terraform v0.12.29
 
 - **Important**: When you configure the admin password for the BIG-IP VE in the template, you cannot use the character **#**.  Additionally, there are a number of other special characters that you should avoid using for F5 product user accounts.  See [K2873](https://support.f5.com/csp/article/K2873) for details.
 - This template requires a service principal for backend pool service discovery. **Important**: you MUST have "OWNER" priviledge on the SP in order to assign role to the resources in your subscription. See the [Service Principal Setup section](#service-principal-authentication) for details, including required permissions.
-- The HA BIG-IP VMs use Azure RBAC role for the failover instead of using Service Prinicipal.
 - This deployment will be using the Terraform Azurerm provider to build out all the neccessary Azure objects. Therefore, Azure CLI is required. For installation, please follow this [Microsoft link](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-apt?view=azure-cli-latest)
 - If this is the first time to deploy the F5 image, the subscription used in this deployment needs to be enabled to programatically deploy. For more information, please refer to [Configure Programatic Deployment](https://azure.microsoft.com/en-us/blog/working-with-marketplace-images-on-azure-resource-manager/)
+- Passwords and secrets are located in [Azure Key Vault](https://docs.microsoft.com/en-us/azure/key-vault/secrets/quick-create-portal). Make sure you have an existing Azure Key Vault "secret" with the data containing the clear text passwords for each relevant item: BIG-IP password, service account credentials, BIG-IQ password, etc.
+  - 'azure_keyvault_secret_name' contains the value of the adminstrator password
+  - A random password will be created if 'az_key_vault_authentication' is set to 'false' (default)
 
 ## Important Configuration Notes
 
 - Variables are configured in variables.tf
 - Sensitive variables like Azure Subscription and Service Principal are configured in terraform.tfvars
-  - Note: Passwords and secrets will be moved to Azure Key Vault in the future
+  - ***Note***: Other items like BIG-IP password are stored in Azure Key Vault. Refer to the [Prerequisites](#prerequisites).
 - This template uses Declarative Onboarding (DO) and Application Services 3 (AS3) packages for the initial configuration. As part of the onboarding script, it will download the RPMs automatically. See the [AS3 documentation](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/latest/) and [DO documentation](https://clouddocs.f5.com/products/extensions/f5-declarative-onboarding/latest/) for details on how to use AS3 and Declarative Onboarding on your BIG-IP VE(s). The [Telemetry Streaming](https://clouddocs.f5.com/products/extensions/f5-telemetry-streaming/latest/) extension is also downloaded and can be configured to point to Azure Log Analytics. 
 - Files
   - appserver.tf - resources for backend web server running DVWA
   - bigip.tf - resources for BIG-IP, NICs, public IPs, network security group
   - main.tf - resources for provider, versions, resource group
   - network.tf - resources for VNET and subnets
-  - onboard.tpl - onboarding script which is run by commandToExecute (user data). It will be copied to /var/lib/waagent/CustomData upon bootup. This script is responsible for downloading the neccessary F5 Automation Toolchain RPM files, installing them, and then executing the onboarding REST calls.
-  - do.json - contains the L1-L3 BIG-IP configurations used by DO for items like VLANs, IPs, and routes.
-  - as3.json - contains the L4-L7 BIG-IP configurations used by AS3 for items like pool members, virtual server listeners, security policies, and more.
-  - ts.json - contains the BIG-IP configurations used by TS for items like telemetry streaming, CPU, memory, application statistics, and more.
+  - as3.json.tpl - contains the L4-L7 BIG-IP configurations used by AS3 for items like pool members, virtual server listeners, security policies, and more.
+  - ts.json.tpl - contains the BIG-IP configurations used by TS for items like telemetry streaming, CPU, memory, application statistics, and more.
 
 ## BYOL Licensing
+
+***Note:*** Current release of Terraform-Azure-Bigip-Module only supports PAYG.
+
 This template uses PayGo BIG-IP image for the deployment (as default). If you would like to use BYOL licenses, then these following steps are needed:
 1. Find available images/versions with "byol" in SKU name using Azure CLI:
   ```
@@ -75,8 +78,8 @@ This template uses PayGo BIG-IP image for the deployment (as default). If you wo
             "offer": "f5-big-ip-byol",
             "publisher": "f5-networks",
             "sku": "f5-big-ltm-2slot-byol",
-            "urn": "f5-networks:f5-big-ip-byol:f5-big-ltm-2slot-byol:15.1.002000",
-            "version": "15.1.002000"
+            "urn": "f5-networks:f5-big-ip-byol:f5-big-ltm-2slot-byol:15.1.004000",
+            "version": "15.1.004000"
           },
   ```
 2. In the "variables.tf", modify *image_name* and *product* with the SKU and offer from AZ CLI results
@@ -113,7 +116,6 @@ This template uses PayGo BIG-IP image for the deployment (as default). If you wo
 | location | Yes | Location of the deployment |
 | availabilityZones | Yes | If you want the VM placed in an Azure Availability Zone, and the Azure region you are deploying to supports it, specify the numbers of the existing Availability Zone you want to use |
 | cidr | Yes | IP Address range of the Virtual Network |
-| f5privatevip | Yes | Secondary Private IP address for BIG-IP virtual server (internal) |
 | f5publicvip | Yes | Secondary Private IP address for BIG-IP virtual server (external) |
 | f5_instance_type | Yes | Azure instance to be used for the BIG-IP VE |
 | f5_product_name | Yes | Azure BIG-IP VE Offer |
@@ -176,7 +178,7 @@ For more information on F5 solutions for Azure, including manual configuration p
 
 ## Creating Virtual Servers on the BIG-IP VE
 
-In order to pass traffic from your clients to the servers through the BIG-IP system, you must create a virtual server on the BIG-IP VE. In this template, the AS3 declaration creates 2 VIPs: one for public internet facing, and one for private internal usage. It is preconfigured as an example.
+In order to pass traffic from your clients to the servers through the BIG-IP system, you must create a virtual server on the BIG-IP VE. In this template, the AS3 declaration creates 1 VIP for public internet facing clients. It is preconfigured as an example.
 
 ***Note:*** These next steps illustrate the manual way in the GUI to create a virtual server
 1. Open the BIG-IP VE Configuration utility
