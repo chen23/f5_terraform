@@ -212,7 +212,6 @@ This example illustrates how to re-configure the BIG-IP instances with DO. If yo
   1. Update do.json as needed
   2. Taint resources and apply
 ```
-terraform taint template_file.vm01_do_json
 terraform taint null_resource.f5vm01_DO
 terraform apply
 ```
@@ -222,7 +221,7 @@ This example illustrates how to run your own custom AS3 (aka application). You c
   1. Update as3.json as needed
   2. Taint resources and apply
 ```
-terraform taint template_file.as3_json
+terraform taint template_file.as3
 terraform taint null_resource.f5vm_AS3
 terraform apply
 ```
@@ -232,9 +231,8 @@ This example illustrates how to re-configure the BIG-IP instances with TS. If yo
   1. Update ts.json as needed
   2. Taint resources and apply
 ```
-terraform taint template_file.vm_ts_file
+terraform taint template_file.ts
 terraform taint null_resource.f5vm01_TS
-terraform taint null_resource.f5vm02_TS
 terraform apply
 ```
 
